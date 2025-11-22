@@ -5,130 +5,141 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AI Resume Analyzer</title>
 
-  <!-- Google font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
-  <!-- Local CSS -->
+  <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
 </head>
 <body>
-  <header class="site-header">
-    <div class="container header-inner">
-      <h1 class="brand">AI Resume Analyzer</h1>
-      <p class="sub">Fast resume vs job description match, ATS score, suggestions & downloadable report.</p>
+  <header class="hero">
+    <div class="hero-inner container">
+      <div class="hero-left">
+        <h1 class="hero-title">AI Resume <span class="accent">Analyzer</span></h1>
+        <p class="hero-sub">Get an instant ATS score, missing keywords, and suggestions to improve your resume. Fast, simple, and portfolio-ready.</p>
+      </div>
+      <div class="hero-right">
+        <div class="badge">Live • <strong>Demo</strong></div>
+        <div class="mini-card">
+          <p class="mini-title">Quick Tips</p>
+          <ul class="mini-list">
+            <li>Paste full resume text</li>
+            <li>Paste job description</li>
+            <li>Click Analyze — download report</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </header>
 
-  <main class="container">
+  <main class="container main-grid">
+    <!-- FORM CARD -->
     <section class="card form-card">
-      <form method="POST" enctype="multipart/form-data" id="analyze-form">
-        <label class="label">Upload Resume (PDF)</label>
-        <input type="file" name="resume_file" accept="application/pdf" class="file-input">
+      <form method="POST" enctype="multipart/form-data" id="analyze-form" class="form-inner">
+        <div class="row">
+          <label class="label">Upload Resume (PDF)</label>
+          <input type="file" name="resume_file" accept="application/pdf" class="file-input">
+        </div>
 
-        <label class="label">Or paste Resume Text</label>
-        <textarea name="resume_text" rows="8" placeholder="Paste resume text...">{{ resume_text }}</textarea>
+        <div class="row">
+          <label class="label">Or paste Resume Text</label>
+          <textarea name="resume_text" rows="8" placeholder="Paste resume text...">{{ resume_text }}</textarea>
+        </div>
 
-        <label class="label">Job Description</label>
-        <textarea name="jd_text" rows="6" placeholder="Paste job description...">{{ jd_text }}</textarea>
+        <div class="row">
+          <label class="label">Job Description</label>
+          <textarea name="jd_text" rows="6" placeholder="Paste job description...">{{ jd_text }}</textarea>
+        </div>
 
-        <div class="actions">
+        <div class="form-actions">
           <button type="submit" class="btn primary">Analyze Match</button>
+          <button type="button" class="btn ghost" onclick="clearFields()">Clear</button>
         </div>
       </form>
     </section>
 
+    <!-- RESULT CARD -->
     {% if result %}
-    <section class="card result-card" id="result-card">
-      <div class="result-head">
-        <div>
-          <h2>Result</h2>
-          <p class="muted">ATS Score</p>
-          <div class="score">{{ ats_score }} / 100</div>
+    <section class="card result-card">
+      <div class="result-top">
+        <div class="score-box">
+          <p class="muted">ATS SCORE</p>
+          <div class="score-large">{{ ats_score }}</div>
+          <p class="muted small">/ 100</p>
         </div>
-        <div class="summary-box">
-          <h3>Match Percentage</h3>
-          <div class="match">{{ result.match_percent }} %</div>
+
+        <div class="match-box">
+          <p class="muted">MATCH</p>
+          <div class="match-large">{{ result.match_percent }}%</div>
+          <p class="muted small">Text similarity between resume & JD</p>
+        </div>
+
+        <div class="actions-box">
+          <form action="/download_report" method="POST" id="download-form">
+            <input type="hidden" name="resume_text" id="resume_text_hidden" value="{{ resume_text }}">
+            <input type="hidden" name="jd_text" id="jd_text_hidden" value="{{ jd_text }}">
+            <input type="hidden" name="ats_score" id="ats_score_hidden" value="{{ ats_score }}">
+            <input type="hidden" name="match_percent" id="match_percent_hidden" value="{{ result.match_percent }}">
+            <input type="hidden" name="missing_skills" id="missing_skills_hidden" value="{{ result.missing_skills|join(', ') }}">
+            <button type="submit" class="btn outline">Download Report</button>
+          </form>
         </div>
       </div>
 
-      <div class="suggestions">
-        <h3>Suggestions to Improve Resume:</h3>
-        <ul>
-          {% for s in suggestions %}
-            <li>{{ s }}</li>
-          {% endfor %}
-          {% if not suggestions %}
-            <li>Your resume structure looks good. Only minor improvements needed!</li>
-          {% endif %}
-        </ul>
+      <div class="result-body">
+        <div class="panel suggestions-panel">
+          <h3>Suggestions</h3>
+          <ul>
+            {% for s in suggestions %}
+              <li>{{ s }}</li>
+            {% endfor %}
+            {% if not suggestions %}
+              <li>Your resume structure looks good. Only minor improvements needed!</li>
+            {% endif %}
+          </ul>
+        </div>
+
+        <div class="panel missing-panel">
+          <h3>Possible Missing Keywords / Skills</h3>
+          <div class="chips">
+            {% for skill in result.missing_skills %}
+              <span class="chip">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        </div>
       </div>
-
-      <div class="missing">
-        <h3>Possible Missing Keywords / Skills</h3>
-        <ul class="wrap-list">
-          {% for skill in result.missing_skills %}
-            <li>{{ skill }}</li>
-          {% endfor %}
-        </ul>
-      </div>
-
-      <!-- Download report form (hidden values are filled by JS) -->
-      <form action="/download_report" method="POST" id="download-form" class="download-form">
-        <input type="hidden" name="resume_text" id="resume_text_hidden" value="{{ resume_text }}">
-        <input type="hidden" name="jd_text" id="jd_text_hidden" value="{{ jd_text }}">
-        <input type="hidden" name="ats_score" id="ats_score_hidden" value="{{ ats_score }}">
-        <input type="hidden" name="match_percent" id="match_percent_hidden" value="{{ result.match_percent }}">
-        <input type="hidden" name="missing_skills" id="missing_skills_hidden" value="{{ result.missing_skills|join(', ') }}">
-        <button type="submit" class="btn secondary">Download Report</button>
-      </form>
-
     </section>
     {% endif %}
-
-    <footer class="footer">
-      <div class="container">
-        <small>Built with ❤️ — <strong>ai-resume-analyzer</strong></small>
-      </div>
-    </footer>
   </main>
 
-  <!-- Small JS to keep hidden fields up-to-date -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>Made with ❤️ — <strong>ai-resume-analyzer</strong></div>
+      <div class="foot-links">View on <a href="https://github.com/sanjanaupadhyay/ai-resume-analyzer" target="_blank">GitHub</a></div>
+    </div>
+  </footer>
+
   <script>
-    // Keep hidden fields synced when result is shown
-    (function () {
+    // Clear form fields quickly
+    function clearFields(){
+      const r = document.querySelector("textarea[name='resume_text']");
+      const j = document.querySelector("textarea[name='jd_text']");
+      const f = document.querySelector("input[type='file']");
+      if(r) r.value = "";
+      if(j) j.value = "";
+      if(f) f.value = "";
+    }
+
+    // Keep hidden fields synced when download button pressed
+    (function(){
       const downloadForm = document.getElementById('download-form');
-      if (!downloadForm) return;
-
-      const resumeHidden = document.getElementById('resume_text_hidden');
-      const jdHidden = document.getElementById('jd_text_hidden');
-      const atsHidden = document.getElementById('ats_score_hidden');
-      const matchHidden = document.getElementById('match_percent_hidden');
-      const missingHidden = document.getElementById('missing_skills_hidden');
-
-      // If values exist from server-render, they are already set by Jinja.
-      // But when user navigates or uses client-side changes, sync them:
-      const form = document.getElementById('analyze-form');
-      form && form.addEventListener('submit', () => {
-        // values are posted to analyze endpoint; when the result renders server-side, download inputs get filled from Jinja
-        // This listener just ensures latest values are present if user manipulates inputs in browser
+      if(!downloadForm) return;
+      downloadForm.addEventListener('submit', function(){
         const resumeInput = document.querySelector("textarea[name='resume_text']");
         const jdInput = document.querySelector("textarea[name='jd_text']");
-        resumeHidden.value = resumeInput ? resumeInput.value : resumeHidden.value;
-        jdHidden.value = jdInput ? jdInput.value : jdHidden.value;
-      });
-
-      // If the download button is clicked (after result), keep hidden fields up-to-date in case user edited text
-      downloadForm.addEventListener('submit', () => {
-        const resumeInput = document.querySelector("textarea[name='resume_text']");
-        const jdInput = document.querySelector("textarea[name='jd_text']");
-        resumeHidden.value = resumeInput ? resumeInput.value : resumeHidden.value;
-        jdHidden.value = jdInput ? jdInput.value : jdHidden.value;
-
-        // missing skills: gather current list items
-        const missingList = document.querySelectorAll('.missing ul.wrap-list li');
-        const arr = Array.from(missingList).map(li => li.innerText.trim());
-        missingHidden.value = arr.join(', ');
+        document.getElementById('resume_text_hidden').value = resumeInput ? resumeInput.value : '';
+        document.getElementById('jd_text_hidden').value = jdInput ? jdInput.value : '';
+        // missing skills already provided by server templating; keep as-is
       });
     })();
   </script>
