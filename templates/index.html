@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Resume Analyzer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>AI Resume Analyzer</h1>
+    <p class="subtitle">
+      Paste your Resume text or upload a PDF resume. Job Description below to see the match percentage.
+    </p>
+
+    <!-- note: enctype required for file uploads -->
+    <form method="POST" enctype="multipart/form-data">
+      <div class="field">
+        <label for="resume_file">Upload Resume (PDF)</label><br/>
+        <input type="file" id="resume_file" name="resume_file" accept=".pdf">
+      </div>
+
+      <div class="field">
+        <label for="resume_text">Or paste Resume Text</label>
+        <textarea id="resume_text" name="resume_text" rows="8">{{ resume_text }}</textarea>
+      </div>
+
+      <div class="field">
+        <label for="jd_text">Job Description</label>
+        <textarea id="jd_text" name="jd_text" rows="8" required>{{ jd_text }}</textarea>
+      </div>
+
+      <button type="submit">Analyze Match</button>
+    </form>
+
+    {% if result %}
+      <div class="result-card">
+        <h2>Result</h2>
+        <h3>ATS Score: {{ ats_score }} / 100</h3>
+
+<h3>Suggestions to Improve Resume:</h3>
+<ul>
+  {% for tip in suggestions %}
+    <li>{{ tip }}</li>
+  {% endfor %}
+</ul>
+
+        <p><strong>Match Percentage:</strong> {{ result.match_percent }} %</p>
+
+        {% if result.missing_skills %}
+          <h3>Possible Missing Keywords / Skills:</h3>
+          <ul>
+            {% for skill in result.missing_skills %}
+              <li>{{ skill }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>No major missing skills detected 🎉</p>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f3f6ff;
+  padding: 40px;
+}
+
+.container {
+  max-width: 800px;
+  margin: auto;
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #ccc;
+}
+
+h1 {
+  text-align: center;
+  color: #3448c5;
+}
+
+.field {
+  margin-bottom: 20px;
+}
+
+label {
+  font-weight: bold;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+}
+
+button {
+  padding: 10px 20px;
+  background: #3448c5;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.result-card {
+  margin-top: 30px;
+  background: #eef1ff;
+  padding: 20px;
+  border-radius: 10px;
+}
