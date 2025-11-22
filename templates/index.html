@@ -1,72 +1,136 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AI Resume Analyzer</title>
+
+  <!-- Google font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Local CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 <body>
-  <div class="container">
-    <h1>AI Resume Analyzer</h1>
-    <p class="subtitle">
-      Paste your Resume text or upload a PDF resume. Job Description below to see the match percentage.
-    </p>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="brand">AI Resume Analyzer</h1>
+      <p class="sub">Fast resume vs job description match, ATS score, suggestions & downloadable report.</p>
+    </div>
+  </header>
 
-    <!-- note: enctype required for file uploads -->
-    <form method="POST" enctype="multipart/form-data">
-      <div class="field">
-        <label for="resume_file">Upload Resume (PDF)</label><br/>
-        <input type="file" id="resume_file" name="resume_file" accept=".pdf">
-      </div>
+  <main class="container">
+    <section class="card form-card">
+      <form method="POST" enctype="multipart/form-data" id="analyze-form">
+        <label class="label">Upload Resume (PDF)</label>
+        <input type="file" name="resume_file" accept="application/pdf" class="file-input">
 
-      <div class="field">
-        <label for="resume_text">Or paste Resume Text</label>
-        <textarea id="resume_text" name="resume_text" rows="8">{{ resume_text }}</textarea>
-      </div>
+        <label class="label">Or paste Resume Text</label>
+        <textarea name="resume_text" rows="8" placeholder="Paste resume text...">{{ resume_text }}</textarea>
 
-      <div class="field">
-        <label for="jd_text">Job Description</label>
-        <textarea id="jd_text" name="jd_text" rows="8" required>{{ jd_text }}</textarea>
-      </div>
+        <label class="label">Job Description</label>
+        <textarea name="jd_text" rows="6" placeholder="Paste job description...">{{ jd_text }}</textarea>
 
-      <button type="submit">Analyze Match</button>
-    </form>
+        <div class="actions">
+          <button type="submit" class="btn primary">Analyze Match</button>
+        </div>
+      </form>
+    </section>
 
     {% if result %}
-      <div class="result-card">
-        <h2>Result</h2>
-        <h3>ATS Score: {{ ats_score }} / 100</h3>
-<form action="/download_report" method="POST">
-    <input type="hidden" name="resume_text" value="{{ resume_text }}">
-    <input type="hidden" name="jd_text" value="{{ jd_text }}">
-    <input type="hidden" name="ats_score" value="{{ ats_score }}">
-    <input type="hidden" name="match_percent" value="{{ match_percent }}">
-    <input type="hidden" name="missing_skills" value="{{ suggestions|join(', ') }}">
-
-    <button type="submit" class="download-btn">Download Report</button>
-</form>
-
-<h3>Suggestions to Improve Resume:</h3>
-<ul>
-  {% for tip in suggestions %}
-    <li>{{ tip }}</li>
-  {% endfor %}
-</ul>
-
-        <p><strong>Match Percentage:</strong> {{ result.match_percent }} %</p>
-
-        {% if result.missing_skills %}
-          <h3>Possible Missing Keywords / Skills:</h3>
-          <ul>
-            {% for skill in result.missing_skills %}
-              <li>{{ skill }}</li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p>No major missing skills detected 🎉</p>
-        {% endif %}
+    <section class="card result-card" id="result-card">
+      <div class="result-head">
+        <div>
+          <h2>Result</h2>
+          <p class="muted">ATS Score</p>
+          <div class="score">{{ ats_score }} / 100</div>
+        </div>
+        <div class="summary-box">
+          <h3>Match Percentage</h3>
+          <div class="match">{{ result.match_percent }} %</div>
+        </div>
       </div>
+
+      <div class="suggestions">
+        <h3>Suggestions to Improve Resume:</h3>
+        <ul>
+          {% for s in suggestions %}
+            <li>{{ s }}</li>
+          {% endfor %}
+          {% if not suggestions %}
+            <li>Your resume structure looks good. Only minor improvements needed!</li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="missing">
+        <h3>Possible Missing Keywords / Skills</h3>
+        <ul class="wrap-list">
+          {% for skill in result.missing_skills %}
+            <li>{{ skill }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- Download report form (hidden values are filled by JS) -->
+      <form action="/download_report" method="POST" id="download-form" class="download-form">
+        <input type="hidden" name="resume_text" id="resume_text_hidden" value="{{ resume_text }}">
+        <input type="hidden" name="jd_text" id="jd_text_hidden" value="{{ jd_text }}">
+        <input type="hidden" name="ats_score" id="ats_score_hidden" value="{{ ats_score }}">
+        <input type="hidden" name="match_percent" id="match_percent_hidden" value="{{ result.match_percent }}">
+        <input type="hidden" name="missing_skills" id="missing_skills_hidden" value="{{ result.missing_skills|join(', ') }}">
+        <button type="submit" class="btn secondary">Download Report</button>
+      </form>
+
+    </section>
     {% endif %}
-  </div>
+
+    <footer class="footer">
+      <div class="container">
+        <small>Built with ❤️ — <strong>ai-resume-analyzer</strong></small>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Small JS to keep hidden fields up-to-date -->
+  <script>
+    // Keep hidden fields synced when result is shown
+    (function () {
+      const downloadForm = document.getElementById('download-form');
+      if (!downloadForm) return;
+
+      const resumeHidden = document.getElementById('resume_text_hidden');
+      const jdHidden = document.getElementById('jd_text_hidden');
+      const atsHidden = document.getElementById('ats_score_hidden');
+      const matchHidden = document.getElementById('match_percent_hidden');
+      const missingHidden = document.getElementById('missing_skills_hidden');
+
+      // If values exist from server-render, they are already set by Jinja.
+      // But when user navigates or uses client-side changes, sync them:
+      const form = document.getElementById('analyze-form');
+      form && form.addEventListener('submit', () => {
+        // values are posted to analyze endpoint; when the result renders server-side, download inputs get filled from Jinja
+        // This listener just ensures latest values are present if user manipulates inputs in browser
+        const resumeInput = document.querySelector("textarea[name='resume_text']");
+        const jdInput = document.querySelector("textarea[name='jd_text']");
+        resumeHidden.value = resumeInput ? resumeInput.value : resumeHidden.value;
+        jdHidden.value = jdInput ? jdInput.value : jdHidden.value;
+      });
+
+      // If the download button is clicked (after result), keep hidden fields up-to-date in case user edited text
+      downloadForm.addEventListener('submit', () => {
+        const resumeInput = document.querySelector("textarea[name='resume_text']");
+        const jdInput = document.querySelector("textarea[name='jd_text']");
+        resumeHidden.value = resumeInput ? resumeInput.value : resumeHidden.value;
+        jdHidden.value = jdInput ? jdInput.value : jdHidden.value;
+
+        // missing skills: gather current list items
+        const missingList = document.querySelectorAll('.missing ul.wrap-list li');
+        const arr = Array.from(missingList).map(li => li.innerText.trim());
+        missingHidden.value = arr.join(', ');
+      });
+    })();
+  </script>
 </body>
 </html>
