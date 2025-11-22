@@ -6,142 +6,146 @@
   <title>AI Resume Analyzer</title>
 
   <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
   <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  <div class="page-bg"></div>
+
   <header class="hero">
-    <div class="hero-inner container">
+    <div class="container hero-wrap">
       <div class="hero-left">
-        <h1 class="hero-title">AI Resume <span class="accent">Analyzer</span></h1>
-        <p class="hero-sub">Get an instant ATS score, missing keywords, and suggestions to improve your resume. Fast, simple, and portfolio-ready.</p>
+        <h1 class="hero-title">AI <span>Resume</span> Analyzer</h1>
+        <p class="hero-lead">Make your resume stand out to both ATS & hiring managers — instant score, smart suggestions, and downloadable reports.</p>
+
+        <div class="hero-cta">
+          <a class="btn primary" href="#analyze">Get Started</a>
+          <a class="btn ghost" href="https://github.com/sanjanaupadhyay/ai-resume-analyzer" target="_blank">View on GitHub</a>
+        </div>
       </div>
+
       <div class="hero-right">
-        <div class="badge">Live • <strong>Demo</strong></div>
-        <div class="mini-card">
-          <p class="mini-title">Quick Tips</p>
-          <ul class="mini-list">
-            <li>Paste full resume text</li>
-            <li>Paste job description</li>
-            <li>Click Analyze — download report</li>
-          </ul>
+        <div class="glass-card">
+          <div class="glass-head">
+            <div class="logo-circle">AI</div>
+            <div class="meta">
+              <div class="meta-title">Live Demo</div>
+              <div class="meta-sub">Instant analysis • No signup</div>
+            </div>
+          </div>
+
+          <div class="glass-body">
+            <div class="stat">
+              <div class="stat-num">30</div>
+              <div class="stat-label">ATS Score (sample)</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num">10%</div>
+              <div class="stat-label">Match</div>
+            </div>
+            <div class="small-note">Tip: paste resume & job description below then click <strong>Analyze Match</strong></div>
+          </div>
         </div>
       </div>
     </div>
   </header>
 
-  <main class="container main-grid">
-    <!-- FORM CARD -->
-    <section class="card form-card">
-      <form method="POST" enctype="multipart/form-data" id="analyze-form" class="form-inner">
-        <div class="row">
+  <main class="container main" id="analyze">
+    <div class="grid">
+      <section class="card form-card">
+        <form method="POST" enctype="multipart/form-data" id="analyze-form" class="form-inner">
           <label class="label">Upload Resume (PDF)</label>
           <input type="file" name="resume_file" accept="application/pdf" class="file-input">
-        </div>
 
-        <div class="row">
           <label class="label">Or paste Resume Text</label>
-          <textarea name="resume_text" rows="8" placeholder="Paste resume text...">{{ resume_text }}</textarea>
-        </div>
+          <textarea name="resume_text" rows="8" placeholder="Paste your resume text...">{{ resume_text }}</textarea>
 
-        <div class="row">
           <label class="label">Job Description</label>
-          <textarea name="jd_text" rows="6" placeholder="Paste job description...">{{ jd_text }}</textarea>
+          <textarea name="jd_text" rows="6" placeholder="Paste the job description...">{{ jd_text }}</textarea>
+
+          <div class="form-actions">
+            <button class="btn primary" type="submit">Analyze Match</button>
+            <button type="button" class="btn outline" onclick="clearFields()">Clear</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="card result-area">
+        {% if result %}
+        <div class="result-top">
+          <div class="score">
+            <div class="score-label">ATS SCORE</div>
+            <div class="score-value">{{ ats_score }}</div>
+            <div class="score-sub">/ 100</div>
+          </div>
+
+          <div class="match">
+            <div class="match-label">MATCH</div>
+            <div class="match-value">{{ result.match_percent }}%</div>
+            <div class="match-sub">Similarity</div>
+          </div>
         </div>
 
-        <div class="form-actions">
-          <button type="submit" class="btn primary">Analyze Match</button>
-          <button type="button" class="btn ghost" onclick="clearFields()">Clear</button>
-        </div>
-      </form>
-    </section>
-
-    <!-- RESULT CARD -->
-    {% if result %}
-    <section class="card result-card">
-      <div class="result-top">
-        <div class="score-box">
-          <p class="muted">ATS SCORE</p>
-          <div class="score-large">{{ ats_score }}</div>
-          <p class="muted small">/ 100</p>
-        </div>
-
-        <div class="match-box">
-          <p class="muted">MATCH</p>
-          <div class="match-large">{{ result.match_percent }}%</div>
-          <p class="muted small">Text similarity between resume & JD</p>
-        </div>
-
-        <div class="actions-box">
+        <div class="download-row">
           <form action="/download_report" method="POST" id="download-form">
-            <input type="hidden" name="resume_text" id="resume_text_hidden" value="{{ resume_text }}">
-            <input type="hidden" name="jd_text" id="jd_text_hidden" value="{{ jd_text }}">
-            <input type="hidden" name="ats_score" id="ats_score_hidden" value="{{ ats_score }}">
-            <input type="hidden" name="match_percent" id="match_percent_hidden" value="{{ result.match_percent }}">
-            <input type="hidden" name="missing_skills" id="missing_skills_hidden" value="{{ result.missing_skills|join(', ') }}">
-            <button type="submit" class="btn outline">Download Report</button>
+            <input type="hidden" name="resume_text" value="{{ resume_text }}">
+            <input type="hidden" name="jd_text" value="{{ jd_text }}">
+            <input type="hidden" name="ats_score" value="{{ ats_score }}">
+            <input type="hidden" name="match_percent" value="{{ result.match_percent }}">
+            <input type="hidden" name="missing_skills" value="{{ result.missing_skills|join(', ') }}">
+            <button class="btn secondary" type="submit">Download Report</button>
           </form>
         </div>
-      </div>
 
-      <div class="result-body">
-        <div class="panel suggestions-panel">
-          <h3>Suggestions</h3>
+        <div class="panel suggestions">
+          <h4>Suggestions</h4>
           <ul>
             {% for s in suggestions %}
               <li>{{ s }}</li>
             {% endfor %}
             {% if not suggestions %}
-              <li>Your resume structure looks good. Only minor improvements needed!</li>
+              <li>Your resume structure looks good — just minor tweaks.</li>
             {% endif %}
           </ul>
         </div>
 
-        <div class="panel missing-panel">
-          <h3>Possible Missing Keywords / Skills</h3>
+        <div class="panel missing">
+          <h4>Missing Keywords / Skills</h4>
           <div class="chips">
             {% for skill in result.missing_skills %}
               <span class="chip">{{ skill }}</span>
             {% endfor %}
           </div>
         </div>
-      </div>
-    </section>
-    {% endif %}
+
+        {% else %}
+        <div class="empty">
+          <img src="{{ url_for('static', filename='magnify.svg') }}" alt="search" style="width:110px;opacity:.85">
+          <p class="empty-text">Analyze a resume to get ATS score, suggestions and missing skills. Looks great on a portfolio page ✨</p>
+        </div>
+        {% endif %}
+      </aside>
+    </div>
   </main>
 
   <footer class="footer">
     <div class="container footer-inner">
-      <div>Made with ❤️ — <strong>ai-resume-analyzer</strong></div>
-      <div class="foot-links">View on <a href="https://github.com/sanjanaupadhyay/ai-resume-analyzer" target="_blank">GitHub</a></div>
+      <div>Built with ❤️ — <strong>AI Resume Analyzer</strong></div>
+      <div class="small">Preview screenshot: <code>/mnt/data/Screenshot (103).png</code></div>
     </div>
   </footer>
 
-  <script>
-    // Clear form fields quickly
-    function clearFields(){
-      const r = document.querySelector("textarea[name='resume_text']");
-      const j = document.querySelector("textarea[name='jd_text']");
-      const f = document.querySelector("input[type='file']");
-      if(r) r.value = "";
-      if(j) j.value = "";
-      if(f) f.value = "";
-    }
-
-    // Keep hidden fields synced when download button pressed
-    (function(){
-      const downloadForm = document.getElementById('download-form');
-      if(!downloadForm) return;
-      downloadForm.addEventListener('submit', function(){
-        const resumeInput = document.querySelector("textarea[name='resume_text']");
-        const jdInput = document.querySelector("textarea[name='jd_text']");
-        document.getElementById('resume_text_hidden').value = resumeInput ? resumeInput.value : '';
-        document.getElementById('jd_text_hidden').value = jdInput ? jdInput.value : '';
-        // missing skills already provided by server templating; keep as-is
-      });
-    })();
-  </script>
+<script>
+  function clearFields(){
+    const r = document.querySelector("textarea[name='resume_text']");
+    const j = document.querySelector("textarea[name='jd_text']");
+    const f = document.querySelector("input[type='file']");
+    if(r) r.value='';
+    if(j) j.value='';
+    if(f) f.value='';
+  }
+</script>
 </body>
 </html>
