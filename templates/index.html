@@ -36,6 +36,15 @@
       <div class="result-card">
         <h2>Result</h2>
         <h3>ATS Score: {{ ats_score }} / 100</h3>
+<form action="/download_report" method="POST">
+    <input type="hidden" name="resume_text" value="{{ resume_text }}">
+    <input type="hidden" name="jd_text" value="{{ jd_text }}">
+    <input type="hidden" name="ats_score" value="{{ ats_score }}">
+    <input type="hidden" name="match_percent" value="{{ match_percent }}">
+    <input type="hidden" name="missing_skills" value="{{ suggestions|join(', ') }}">
+
+    <button type="submit" class="download-btn">Download Report</button>
+</form>
 
 <h3>Suggestions to Improve Resume:</h3>
 <ul>
